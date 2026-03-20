@@ -27,18 +27,20 @@ import (
 )
 
 type Service struct {
-	ApiUrl string
+	ApiUrl      string
+	AccessToken string
 }
 
 // NewService creates a new instance of the service with the provided API URL
-func NewService(apiUrl string) *Service {
+func NewService(apiUrl string, accessToken string) *Service {
 	return &Service{
-		ApiUrl: apiUrl,
+		ApiUrl:      apiUrl,
+		AccessToken: accessToken,
 	}
 }
 
-// FetchBooks fetches the list of books from the API using the provided access token
-func (s *Service) FetchBooks(accessToken string) ([]config.Book, error) {
+// FetchBooks fetches the list of books from the API using the configured access token
+func (s *Service) FetchBooks() ([]config.Book, error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", s.ApiUrl+"/books", nil)
@@ -46,7 +48,7 @@ func (s *Service) FetchBooks(accessToken string) ([]config.Book, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Authorization", "Bearer "+s.AccessToken)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -65,8 +67,8 @@ func (s *Service) FetchBooks(accessToken string) ([]config.Book, error) {
 	return books, nil
 }
 
-// AddNewBook adds a new book to the list using the provided access token
-func (s Service) AddNewBook(accessToken string, book config.Book) error {
+// AddNewBook adds a new book to the list using the configured access token
+func (s Service) AddNewBook(book config.Book) error {
 	client := &http.Client{}
 	bookJson, err := json.Marshal(book)
 	if err != nil {
@@ -78,7 +80,7 @@ func (s Service) AddNewBook(accessToken string, book config.Book) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Authorization", "Bearer "+s.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -92,8 +94,8 @@ func (s Service) AddNewBook(accessToken string, book config.Book) error {
 	return nil
 }
 
-// DeleteBook deletes a book from the list using the provided access token
-func (s Service) DeleteBook(accessToken string, bookId string) error {
+// DeleteBook deletes a book from the list using the configured access token
+func (s Service) DeleteBook(bookId string) error {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("DELETE", s.ApiUrl+"/books/"+bookId, nil)
@@ -101,7 +103,7 @@ func (s Service) DeleteBook(accessToken string, bookId string) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Authorization", "Bearer "+s.AccessToken)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

@@ -19,8 +19,9 @@
 package config
 
 type EnvConfig struct {
-	ApiUrl string `env:"API_URL,required"`
-	Port   string `env:"PORT" envDefault:"8080"`
+	ApiUrl      string `env:"API_URL,required"`
+	AccessToken string `env:"ACCESS_TOKEN" envDefault:"xxxxx"`
+	Port        string `env:"PORT" envDefault:"8080"`
 }
 
 // Book represents a book in the reading list
@@ -29,23 +30,6 @@ type Book struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
 	Status string `json:"status"`
-}
-
-// User represents a user in the system.
-// This implementation uses a minimal set of fields for demonstration purposes
-type User struct {
-	Username     string       `json:"username"`
-	Email        string       `json:"email"`
-	FirstName    string       `json:"first_name"`
-	LastName     string       `json:"last_name"`
-	Groups       []string     `json:"groups"`
-	Organization Organization `json:"organization"`
-	Issuer       string       `json:"iss"`
-	Subject      string       `json:"sub"`
-}
-
-type Organization struct {
-	Uuid string `json:"uuid"`
 }
 
 type ErrorResponse struct {

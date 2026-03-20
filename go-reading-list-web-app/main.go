@@ -33,7 +33,7 @@ func main() {
 		log.Fatal("Error loading configs:", err)
 	}
 
-	service := service.NewService(config.GetConfig().ApiUrl)
+	service := service.NewService(config.GetConfig().ApiUrl, config.GetConfig().AccessToken)
 
 	router := gin.Default()
 	router.LoadHTMLGlob("internal/templates/*")

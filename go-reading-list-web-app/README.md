@@ -54,6 +54,7 @@ You can refer to the Documentation: [Deploy Your First Static Web Application](h
 2. Create a `.env` file with the following content:
     ```env
     API_URL=<URL of the Reading List Service deployed in WSO2 Developer Platform>
+    ACCESS_TOKEN=xxxxx # Optional default token
     PORT=<port> # (Optional) Default is 8080
     ```
 

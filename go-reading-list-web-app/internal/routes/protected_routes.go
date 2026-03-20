@@ -19,7 +19,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"go-reading-list-web-app/internal/config"
 	"go-reading-list-web-app/internal/service"
 	"net/http"
@@ -45,21 +44,7 @@ func ProtectedRoutes(r *gin.Engine, s *service.Service) {
 // handleDashboard handles the dashboard request
 func handleDashboard(s *service.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// read userClaims from the request
-		var user config.User
-		userClaims := c.Request.Header.Get("Choreo-User-Claims")
-		if err := json.Unmarshal([]byte(userClaims), &user); err != nil {
-			SendErrorResponse(c, config.ErrorResponse{
-				Code:    "401",
-				Message: "Unauthorized",
-				Path:    "/dashboard",
-				Debug:   err,
-			})
-			return
-		}
-
-		accessToken := c.Request.Header.Get("Choreo-Access-Token")
-		books, err := s.FetchBooks(accessToken)
+		books, err := s.FetchBooks()
 		if err != nil {
 			SendErrorResponse(c, config.ErrorResponse{
 				Code:    "500",
@@ -71,8 +56,8 @@ func handleDashboard(s *service.Service) gin.HandlerFunc {
 		}
 
 		c.HTML(http.StatusOK, "dashboard.tmpl", gin.H{
-			"username": user.Username,
-			"email":    user.Email,
+			"username": "Reading List",
+			"email":    "Static Token Session",
 			"books":    books,
 		})
 	}
@@ -100,8 +85,7 @@ func handleAddNewBookPostRequest(s *service.Service) gin.HandlerFunc {
 			Status: bookStatus,
 		}
 
-		accessToken := c.Request.Header.Get("Choreo-Access-Token")
-		if err := s.AddNewBook(accessToken, book); err != nil {
+		if err := s.AddNewBook(book); err != nil {
 			SendErrorResponse(c, config.ErrorResponse{
 				Code:    "500",
 				Message: "Internal Server Error: Failed to add new book",
@@ -128,8 +112,7 @@ func handleDeleteBook(s *service.Service) gin.HandlerFunc {
 			return
 		}
 
-		accessToken := c.Request.Header.Get("Choreo-Access-Token")
-		if err := s.DeleteBook(accessToken, bookId); err != nil {
+		if err := s.DeleteBook(bookId); err != nil {
 			SendErrorResponse(c, config.ErrorResponse{
 				Code:    "500",
 				Message: "Internal Server Error: Failed to delete book",
@@ -150,5 +133,10 @@ func handleLogout(c *gin.Context) {
 
 // SendErrorResponse redirects the user to the error page with the provided error response
 func SendErrorResponse(c *gin.Context, e config.ErrorResponse) {
-	c.Redirect(http.StatusSeeOther, "/error?code="+e.Code+"&message="+e.Message+"&path="+e.Path+"&debug="+e.Debug.Error())
+	debug := ""
+	if e.Debug != nil {
+		debug = e.Debug.Error()
+	}
+
+	c.Redirect(http.StatusSeeOther, "/error?code="+e.Code+"&message="+e.Message+"&path="+e.Path+"&debug="+debug)
 }
