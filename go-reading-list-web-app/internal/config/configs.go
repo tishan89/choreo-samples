@@ -15,17 +15,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
+
 package config
 
 import (
 	"log"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
 )
 
 var config *EnvConfig
+
+const apiBasePath = "/api/v1/reading-list"
 
 // LoadConfigs loads the environment variables parses them into the EnvConfig struct
 func LoadConfigs() error {
@@ -38,10 +41,21 @@ func LoadConfigs() error {
 	if err := env.Parse(config); err != nil {
 		return err
 	}
+
+	config.ApiUrl = normalizeAPIURL(config.ApiUrl)
 	return nil
 }
 
 // GetConfig returns the loaded configuration
 func GetConfig() *EnvConfig {
 	return config
+}
+
+func normalizeAPIURL(apiURL string) string {
+	trimmedURL := strings.TrimRight(apiURL, "/")
+	if strings.HasSuffix(trimmedURL, apiBasePath) {
+		return trimmedURL
+	}
+
+	return trimmedURL + apiBasePath
 }

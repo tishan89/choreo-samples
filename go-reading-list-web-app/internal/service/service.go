@@ -23,6 +23,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-reading-list-web-app/internal/config"
+	"io"
+	"log"
 	"net/http"
 )
 
@@ -42,27 +44,44 @@ func NewService(apiUrl string, accessToken string) *Service {
 // FetchBooks fetches the list of books from the API using the configured access token
 func (s *Service) FetchBooks() ([]config.Book, error) {
 	client := &http.Client{}
+	requestURL := s.ApiUrl + "/books"
 
-	req, err := http.NewRequest("GET", s.ApiUrl+"/books", nil)
+	log.Printf("FetchBooks: preparing request url=%q token=%q", requestURL, maskToken(s.AccessToken))
+
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
+		log.Printf("FetchBooks: request creation failed: %v", err)
 		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+s.AccessToken)
+	log.Printf("FetchBooks: sending request method=%s url=%q auth_header_enabled=%t", req.Method, req.URL.String(), req.Header.Get("Authorization") != "")
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("FetchBooks: request failed: %v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("FetchBooks: failed reading response body: %v", err)
+		return nil, err
+	}
+
+	log.Printf("FetchBooks: response status=%s body=%q", resp.Status, truncateForLog(string(body), 512))
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch books: %s", resp.Status)
 	}
 
 	var books []config.Book
-	if err := json.NewDecoder(resp.Body).Decode(&books); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&books); err != nil {
+		log.Printf("FetchBooks: failed decoding response body: %v", err)
 		return nil, err
 	}
+
+	log.Printf("FetchBooks: decoded %d books", len(books))
 
 	return books, nil
 }
@@ -114,4 +133,23 @@ func (s Service) DeleteBook(bookId string) error {
 		return fmt.Errorf("failed to delete book: %s", resp.Status)
 	}
 	return nil
+}
+
+func maskToken(token string) string {
+	if token == "" {
+		return "<empty>"
+	}
+	if len(token) <= 8 {
+		return token
+	}
+
+	return token[:4] + "..." + token[len(token)-4:]
+}
+
+func truncateForLog(value string, limit int) string {
+	if len(value) <= limit {
+		return value
+	}
+
+	return value[:limit] + "...(truncated)"
 }
